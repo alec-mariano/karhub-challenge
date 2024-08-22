@@ -57,4 +57,4 @@ Independente de erro de escrita ou não, a regra foi interpretada solicitando ac
 
 #### Salvar esses dados em uma tabela, preferencialmente no BigQuery
 
-Regra atendida pela função `load_to_bigquery()`. A função também verifica se o dataset existe, criando o dataset e a tabela com os nomes determinados no código, caso não existam.
+Regra atendida pela função `load_to_bigquery()`. A função também verifica se o dataset existe, criando o dataset e a tabela com os nomes determinados no código, caso não existam. Essa função utiliza de uma conta de serviço que deve ser criada na GCP que vai receber a tabela final. Mais detalhes na seção de execução do projeto.
