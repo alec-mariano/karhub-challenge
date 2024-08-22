@@ -1,0 +1,5 @@
+.git
+.DS_Store
+__pycache__/
+.venv
+teste-karhub-5ea1968f3038.json
