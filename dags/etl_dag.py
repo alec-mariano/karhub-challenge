@@ -42,7 +42,7 @@ def run_transform(**kwargs):
 def run_load(**kwargs):
     final_df = kwargs['ti'].xcom_pull(key='final_df', task_ids='run_transform')
 
-    credentials_path = 'teste-karhub-5ea1968f3038.json' # Substituir suas credenciais aqui
+    credentials_path = 'karhub_gcp.json' # Substituir suas credenciais aqui
     table_id = 'orcamento.sp_2022' # Nome do seu dataset e tabela
 
     load_to_bigquery(final_df, table_id, credentials_path)

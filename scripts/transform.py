@@ -16,7 +16,7 @@ def split_fonte_de_recursos(df):
     Função para dividir a coluna 'Fonte de Recursos' em 'ID Fonte Recurso' e 'Nome Fonte Recurso'
     """
     split_cols = df['Fonte de Recursos'].str.split(' - ', expand=True)
-    df['ID Fonte Recurso'] = split_cols[0]
+    df['ID Fonte Recurso'] = split_cols[0].astype(int)
     df['Nome Fonte Recurso'] = split_cols[1]
     df.drop(columns=['Fonte de Recursos'], inplace=True)
     return df
