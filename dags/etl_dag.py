@@ -5,7 +5,7 @@ from datetime import timedelta
 import pandas as pd
 
 from scripts.extract import read_csv
-from scripts.transform import get_exchange_rate, split_fonte_de_recursos, merge_dataframes, add_exchange_rate_columns
+from scripts.transform import apply_exchange_rate, split_id, merge_dataframes, aggregate_data, clean_numeric_columns
 from scripts.load import load_to_bigquery
 
 default_args = {
@@ -31,21 +31,52 @@ def run_transform(**kwargs):
     despesas_df = kwargs['ti'].xcom_pull(key='despesas_df', task_ids='run_extract')
     receitas_df = kwargs['ti'].xcom_pull(key='receitas_df', task_ids='run_extract')
 
-    despesas_df = split_fonte_de_recursos(despesas_df)
-    receitas_df = split_fonte_de_recursos(receitas_df)
-    merged_df = merge_dataframes(despesas_df, receitas_df)
-    exchange_rate = get_exchange_rate()
-    final_df = add_exchange_rate_columns(merged_df, exchange_rate)
+    despesas_df = despesas_df.drop(columns=['Unnamed: 3'])
+    despesas_df = despesas_df.head(-1)
+    receitas_df = receitas_df.head(-1)
 
-    kwargs['ti'].xcom_push(key='final_df', value=final_df)
+    despesas_df = split_id(despesas_df, 'Fonte de Recursos')
+    receitas_df = split_id(receitas_df, 'Fonte de Recursos')
+
+    despesas_df = clean_numeric_columns(despesas_df, 'Liquidado')
+    receitas_df = clean_numeric_columns(receitas_df, 'Arrecadado')
+
+    # sp_agg_2022
+
+    despesas_agg = aggregate_data(despesas_df, 'Liquidado', 'Total Liquidado')
+    receitas_agg = aggregate_data(receitas_df, 'Arrecadado', 'Total Arrecadado')
+
+    merged_df = merge_dataframes(despesas_agg, receitas_agg)
+    merged_df = apply_exchange_rate(merged_df, 'Total Liquidado')
+    merged_df = apply_exchange_rate(merged_df, 'Total Arrecadado')
+
+    #sp_des_2022
+
+    despesas_df = split_id(despesas_df, 'Despesa')
+    despesas_df = despesas_df.drop('Nome Fonte de Recursos', axis='columns')
+    despesas_df = apply_exchange_rate(despesas_df, 'Liquidado')
+
+    #sp_rec_2022
+
+    receitas_df = split_id(receitas_df, 'Receita')
+    receitas_df = receitas_df.drop('Nome Fonte de Recursos', axis='columns')
+    receitas_df = apply_exchange_rate(receitas_df, 'Arrecadado')
+
+    kwargs['ti'].xcom_push(key='merged_df', value=merged_df)
+    kwargs['ti'].xcom_push(key='despesas_df', value=despesas_df)
+    kwargs['ti'].xcom_push(key='receitas_df', value=receitas_df)
 
 def run_load(**kwargs):
-    final_df = kwargs['ti'].xcom_pull(key='final_df', task_ids='run_transform')
+    merged_df = kwargs['ti'].xcom_pull(key='merged_df', task_ids='run_transform')
+    despesas_df = kwargs['ti'].xcom_pull(key='despesas_df', task_ids='run_transform')
+    receitas_df = kwargs['ti'].xcom_pull(key='receitas_df', task_ids='run_transform')
 
     credentials_path = 'karhub_gcp.json' # Substituir suas credenciais aqui
-    table_id = 'orcamento.sp_2022' # Nome do seu dataset e tabela
+    tables = ['orcamento.sp_agg_2022', 'orcamento.sp_des_2022', 'orcamento.sp_rec_2022'] # Nome do seu dataset e tabela
+    dataframes = [merged_df, despesas_df, receitas_df]
 
-    load_to_bigquery(final_df, table_id, credentials_path)
+    for i in range(len(tables)):
+        load_to_bigquery(dataframes[i], tables[i], credentials_path)
 
 
 with DAG(

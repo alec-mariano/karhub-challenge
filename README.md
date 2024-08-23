@@ -57,4 +57,123 @@ Independente de erro de escrita ou não, a regra foi interpretada solicitando ac
 
 #### Salvar esses dados em uma tabela, preferencialmente no BigQuery
 
-Regra atendida pela função `load_to_bigquery()`. A função também verifica se o dataset existe, criando o dataset e a tabela com os nomes determinados no código, caso não existam. Essa função utiliza de uma conta de serviço que deve ser criada na GCP que vai receber a tabela final. Mais detalhes na seção de execução do projeto.
+Regra atendida pela função `load_to_bigquery()`. A função também verifica se o dataset existe, criando o dataset e a tabela com os nomes determinados no código, caso não existam.
+
+
+# Executando a aplicação
+Para rodar o processo de ETL localmente para o BigQuery, precisaremos clonar o projeto via Git para a máquina local, do arquivo JSON da conta de serviço do seu ambiente BigQuery e instalar o Astro CLI.
+
+### Clonando o repositório
+Executar o comando abaixo no terminal e no diretório onde deseja manter o projeto.
+```bash
+  git clone https://github.com/alec-mariano/karhub-challenge.git
+```
+
+### Credenciais do BigQuery
+Baixar o arquivo JSON com as credenciais para criar a tabela final no seu ambiente BigQuery. Para minimizar as possibilidades de erros na execução, a conta de serviço deve ter as seguintes permissões:
+
+ - Administrador do BigQuery
+ - Administrador do Storage
+ - Criador de token de conta de serviço
+
+Caso precise de ajuda com essa etapa, siga o tutorial no link: [Tutorial para baixar as credenciais](https://github.com/alec-mariano/karhub-challenge/blob/main/tutorial_gcp.md)
+
+**IMPORTANTE:** Assim que obtiver o arquivo, o mesmo deve ser colocado no diretório raiz do projeto, renomeado como `karhub_gcp.json`.
+
+### Astro CLI
+Caso não tenha o Astro CLI em seu ambiente local, siga os passos abaixo para instalação. Os comandos consideram um ambiente Windows.
+
+**Pré-requisitos:**
+
+ - Docker Desktop
+ - Microsoft Hyper-V habilitado.
+
+Com o Windows PowerShell aberto como administrador, execute o comando abaixo:
+
+```bash
+  winget install -e --id Astronomer.Astro
+```
+Se a instalação finalizou com sucesso, você já pode rodar o comando abaixo para confirmar:
+
+```bash
+  astro version
+```
+No diretório raiz do projeto, inicialize o Airflow e seus respectivos contêineres com o comando abaixo:
+
+```bash
+  astro dev init
+```
+
+Após finalizado o setup do Airflow no projeto, agora você está pronto para iniciar o Airflow com a DAG do projeto já configurada para rodar manualmente e carregar os arquivos fonte de dados para a tabela `orcamento.sp_2022` no seu BigQuery. Utilize o comando abaixo e aguarde a interface web do Airflow abrir:
+
+```bash
+  astro dev start
+```
+
+Na lista de DAGs deve ser possível ver uma DAG de exemplo e a DAG `etl_budget_sp`, que é o processo que executa o ETL. Execute a DAG em questão para iniciar o ETL. É possível acompanhar o processo de extração, transformação e carga ao entrar no detalhe da DAG.
+
+### Parando o Airflow
+Após todos os processos executados com sucesso, está já pode parar os contêineres relacionados ao nosso projeto. Basta executar o comando abaixo:
+
+```bash
+  astro dev stop
+```
+
+# Análises no BigQuery
+Nessa seção do documento, temos as perguntas descritas no desafio. As respostas são respondidas pelas queries que estão no diretório `queries` do projeto. Estão prontas para serem executadas no BigQuery.
+
+1 - Quais são as 5 fontes de recursos que mais arrecadaram?
+
+Reposta na query:
+```bash
+  queries/question_1.sql
+```
+
+2 - Quais são as 5 fontes de recursos que mais gastaram?
+
+Reposta na query:
+```bash
+  queries/question_2.sql
+```
+
+3 - Quais são as 5 fontes de recursos com a melhor margem bruta?
+
+Reposta na query:
+```bash
+  queries/question_3.sql
+```
+
+4 - Quais são as 5 fontes de recursos que menos arrecadaram?
+
+Reposta na query:
+```bash
+  queries/question_4.sql
+```
+
+5 - Quais são as 5 fontes de recursos que menos gastaram?
+
+Reposta na query:
+```bash
+  queries/question_5.sql
+```
+
+6 - Quais são as 5 fontes de recursos com a pior margem bruta?
+
+Reposta na query:
+```bash
+  queries/question_6.sql
+```
+
+7 - Qual a média de arrecadação por fonte de recurso?
+
+Reposta na query:
+```bash
+  queries/question_7.sql
+```
+
+8 - Qual a média de gastos por fonte de recurso?
+
+Reposta na query:
+```bash
+  queries/question_8.sql
+```
